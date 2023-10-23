@@ -1,0 +1,109 @@
+#include <Servo.h>
+Servo m;
+int TRIG = 10;	
+int ECO = 11;		
+int DURACION;
+int DISTANCIA;
+int a;
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+LiquidCrystal_I2C lcd(0x3f,16,2); 
+#include <DHT.h>;
+#define DHTPIN 7    
+#define DHTTYPE DHT11   
+DHT dht(DHTPIN, DHTTYPE); 
+int h;  
+int t; 
+int pir=2;
+int ledAlarma=3;
+int buzzerMovimiento=4;
+int ventilador=13;
+int iluminacion=6;
+int alarmaHumo=5;
+int sensorHumo = A1; 
+int sensorValue = 0; 
+int LDR = A0; 
+int ldrValue = 0;
+int estado = 0;
+void setup() {
+  pinMode(TRIG, OUTPUT); 	
+  pinMode(ECO, INPUT);	
+   m.attach(12);	
+  pinMode(pir,INPUT);
+  pinMode(ledAlarma,OUTPUT);
+  pinMode(alarmaHumo,OUTPUT);
+  pinMode(buzzerMovimiento,OUTPUT);
+  Serial.begin(9600);
+    dht.begin();
+    lcd.init(); 
+    lcd.backlight(); 
+  pinMode(ventilador, OUTPUT);
+  pinMode(iluminacion, OUTPUT);
+}
+void loop() {
+   h = dht.readHumidity();
+    t = dht.readTemperature();
+    lcd.setCursor(0,0);
+    lcd.println("Temperatura: ");
+    lcd.setCursor(13,0);
+    lcd.print(t);
+    lcd.print("C");
+    lcd.setCursor(0,1);
+    lcd.println("Humedad:     ");
+    lcd.setCursor(13, 1);
+    lcd.print(h);
+    lcd.print("%");
+  delay(1000); 
+   if(t>26){
+  digitalWrite(ventilador,HIGH);
+}
+else {
+  digitalWrite(ventilador,LOW);
+}
+
+  if (digitalRead (pir)==HIGH){
+    digitalWrite(ledAlarma,HIGH);
+    digitalWrite(buzzerMovimiento,HIGH);
+  }
+  else {
+    digitalWrite(ledAlarma,LOW);
+    digitalWrite(buzzerMovimiento,LOW);
+  }
+
+  ldrValue = analogRead(LDR);
+   if (ldrValue >= 800){ 
+     digitalWrite(iluminacion,HIGH);
+   }
+  else {
+    digitalWrite(iluminacion,LOW);
+  }
+
+  digitalWrite(TRIG, HIGH); 
+  delay(10);				
+  digitalWrite(TRIG, LOW);	
+  
+  DURACION = pulseIn(ECO, HIGH);
+  DISTANCIA = DURACION / 58.2;	
+  delay(200);			
+
+  if (DISTANCIA <= 20 && DISTANCIA >= 0){	
+    for(a=0;a<=90;a++){
+    m.write(a);
+    delay(20);
+   }
+    delay(2000);
+  for(a=90;a>=0;a--){
+    m.write(a);
+    delay(20);
+  }
+  }
+  sensorValue = analogRead(sensorHumo); 
+  Serial.println(sensorValue, DEC); 
+  if (sensorValue > 130){
+    digitalWrite(alarmaHumo, HIGH);
+  }
+  else {
+    digitalWrite(alarmaHumo, LOW);
+  }
+}
+
